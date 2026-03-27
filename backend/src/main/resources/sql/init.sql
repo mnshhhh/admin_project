@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS asset_check_detail (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS audit_record (
     id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-    biz_type     VARCHAR(50)  NOT NULL COMMENT '业务类型(BORROW/ALLOCATE/REPAIR/SCRAP)',
+    biz_type     VARCHAR(50)  NOT NULL COMMENT '业务类型(BORROW/ALLOCATE/REPAIR/APPLICATION/WAREHOUSE_ENTRY/SCRAP)',
     biz_id       BIGINT       NOT NULL COMMENT '业务ID',
     auditor_id   BIGINT       NOT NULL COMMENT '审批人',
     action       VARCHAR(20)  NOT NULL COMMENT '操作(APPROVE/REJECT)',
@@ -278,7 +278,7 @@ CREATE TABLE IF NOT EXISTS asset_application (
     quantity       INT          NOT NULL DEFAULT 1 COMMENT '数量',
     estimated_amount DECIMAL(12,2)       DEFAULT NULL COMMENT '预估金额',
     reason         VARCHAR(500)          DEFAULT NULL COMMENT '申请理由',
-    status         VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT '状态(PENDING:待审批 APPROVED:已批准 REJECTED:已驳回 PROCUREMENT:采购中 COMPLETED:已完成)',
+    status         VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT '状态(PENDING:待审批 APPROVED:已批准 REJECTED:已驳回 PROCUREMENT:采购中 WAREHOUSED:已入库 COMPLETED:已完成)',
     approver_id    BIGINT                DEFAULT NULL,
     approve_time   DATETIME              DEFAULT NULL,
     approve_remark VARCHAR(500)          DEFAULT NULL,
@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS purchase_order (
 CREATE TABLE IF NOT EXISTS warehouse_entry (
     id               BIGINT AUTO_INCREMENT PRIMARY KEY,
     entry_no         VARCHAR(50)  NOT NULL COMMENT '入库单号',
-    purchase_order_id BIGINT      NOT NULL COMMENT '关联采购单ID',
+    purchase_order_id BIGINT               DEFAULT NULL COMMENT '关联采购单ID',
     application_id   BIGINT       NOT NULL COMMENT '关联申请ID',
     asset_name       VARCHAR(200) NOT NULL COMMENT '资产名称',
     specification    VARCHAR(200)          DEFAULT NULL COMMENT '规格型号',
@@ -468,3 +468,93 @@ CREATE TABLE IF NOT EXISTS sys_notification (
     INDEX idx_user_id (user_id),
     INDEX idx_is_read (is_read)
 ) ENGINE = InnoDB COMMENT = '通知表';
+
+-- ============================================================
+-- 演示数据（仅演示用途，各状态均覆盖）
+-- ============================================================
+
+-- ----------------------------
+-- 1. 资产借用记录（覆盖多种状态）
+-- ----------------------------
+INSERT INTO asset_borrow (id, borrow_no, asset_id, asset_code, asset_name, applicant_id, dept_id, purpose, borrow_time, expected_return_time, actual_return_time, status, approver_id, approve_time, approve_remark, deleted, create_time, update_time) VALUES
+(1, 'BOR-20250301001', 1, 'AST-2024-000001', '笔记本电脑', 3, 4, '教学使用', '2025-03-01 09:00:00', '2025-03-15 18:00:00', NULL, 'BORROWED', 2, '2025-03-01 10:00:00', '同意借用', 0, '2025-03-01 09:00:00', '2025-03-01 10:00:00'),
+(2, 'BOR-20250305001', 2, 'AST-2024-000002', '投影仪', 3, 4, '会议室演示', '2025-03-05 14:00:00', '2025-03-10 18:00:00', '2025-03-10 17:30:00', 'RETURNED', 2, '2025-03-05 15:00:00', '请爱护设备', 0, '2025-03-05 14:00:00', '2025-03-10 17:30:00'),
+(3, 'BOR-20250310001', 3, 'AST-2024-000003', '台式电脑', 4, 4, '课程实训', '2025-03-10 08:30:00', '2025-03-20 18:00:00', NULL, 'PENDING', NULL, NULL, NULL, 0, '2025-03-10 08:30:00', '2025-03-10 08:30:00'),
+(4, 'BOR-20250312001', 4, 'AST-2024-000004', '激光打印机', 4, 4, '打印材料', '2025-03-12 10:00:00', '2025-03-25 18:00:00', NULL, 'PENDING', NULL, NULL, NULL, 0, '2025-03-12 10:00:00', '2025-03-12 10:00:00');
+
+-- ----------------------------
+-- 2. 资产维修记录（覆盖多种状态）
+-- ----------------------------
+INSERT INTO asset_repair (id, repair_no, asset_id, asset_code, asset_name, reporter_id, dept_id, description, images, repair_man_id, repair_cost, repair_hours, status, complete_time, repair_remark, deleted, create_time, update_time) VALUES
+(1, 'REP-20250306001', 4, 'AST-2024-000004', '激光打印机', 3, 4, '卡纸严重，进纸不稳', NULL, 5, NULL, NULL, 'IN_PROGRESS', NULL, NULL, 0, '2025-03-06 10:00:00', '2025-03-08 14:00:00'),
+(2, 'REP-20250303001', 2, 'AST-2024-000002', '投影仪', 3, 4, '投影模糊，灯泡疑似衰减', NULL, 5, 350.00, 2.5, 'COMPLETED', '2025-03-10 10:00:00', '已更换灯泡，测试正常', 0, '2025-03-03 09:00:00', '2025-03-10 10:00:00'),
+(3, 'REP-20250311001', 1, 'AST-2024-000001', '笔记本电脑', 4, 4, '键盘部分按键失灵', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 0, '2025-03-11 16:00:00', '2025-03-11 16:00:00'),
+(4, 'REP-20250309001', 5, 'AST-2024-000005', '示波器', 3, 3, '屏幕黑块，显示异常', NULL, 5, 800.00, 4.0, 'COMPLETED', '2025-03-15 09:00:00', '主板维修完成', 0, '2025-03-09 11:00:00', '2025-03-15 09:00:00');
+
+-- ----------------------------
+-- 3. 资产调拨记录
+-- ----------------------------
+INSERT INTO asset_allocate (id, allocate_no, asset_id, asset_code, asset_name, from_dept_id, to_dept_id, applicant_id, reason, status, deleted, create_time, update_time) VALUES
+(1, 'ALLOC-20250305001', 3, 'AST-2024-000003', '台式电脑', 4, 2, 3, '计算机系机房A调整，调拨至信息学院', 'COMPLETED', 0, '2025-03-04 09:00:00', '2025-03-05 11:00:00'),
+(2, 'ALLOC-20250312001', 5, 'AST-2024-000005', '示波器', 3, 4, 3, '实验课程需要，临时调拨至机械系', 'PENDING', 0, '2025-03-12 14:00:00', '2025-03-12 14:00:00');
+
+-- ----------------------------
+-- 4. 资产盘点任务
+-- ----------------------------
+INSERT INTO asset_check_task (id, task_no, task_name, dept_id, creator_id, status, start_time, end_time, remark, deleted, create_time, update_time) VALUES
+(1, 'CHECK-2025-001', '信息学院2025年第一季度资产清查', 2, 2, 'COMPLETED', '2025-03-01 09:00:00', '2025-03-01 18:00:00', '信息楼201教室一台投影仪盘亏，已上报', 0, '2025-02-28 10:00:00', '2025-03-01 18:00:00'),
+(2, 'CHECK-2025-002', '机械系2025年3月资产例行盘点', 4, 3, 'IN_PROGRESS', '2025-03-10 09:00:00', '2025-03-18 18:00:00', '盘点中，预计3月18日完成', 0, '2025-03-10 09:00:00', '2025-03-15 10:00:00');
+
+INSERT INTO asset_check_detail (id, task_id, asset_id, asset_code, asset_name, expected_dept_id, check_result, checker_id, check_time, remark, create_time) VALUES
+(1, 1, 2, 'AST-2024-000002', '投影仪', 2, 'DEFICIT', 2, '2025-03-01 17:00:00', '实物未找到，已申请报损', '2025-03-01 09:00:00'),
+(2, 1, 1, 'AST-2024-000001', '笔记本电脑', 2, 'NORMAL', 2, '2025-03-01 16:00:00', NULL, '2025-03-01 09:00:00'),
+(3, 2, 3, 'AST-2024-000003', '台式电脑', 4, 'NORMAL', 3, '2025-03-15 10:00:00', NULL, '2025-03-10 09:00:00'),
+(4, 2, 4, 'AST-2024-000004', '激光打印机', 4, 'NORMAL', 3, '2025-03-15 10:00:00', NULL, '2025-03-10 09:00:00');
+
+-- ----------------------------
+-- 5. 资产采购申请（覆盖完整生命周期）
+-- ----------------------------
+INSERT INTO asset_application (id, apply_no, applicant_id, dept_id, asset_name, specification, quantity, estimated_amount, reason, status, approver_id, approve_time, approve_remark, deleted, create_time, update_time) VALUES
+-- 待审批
+(1, 'APP-20250301001', 3, 4, '无线投影仪', '爱普生 CB-1795F / 5000流明', 2, 16000.00, '多媒体教室升级改造', 'PENDING', NULL, NULL, NULL, 0, '2025-03-01 08:30:00', '2025-03-01 08:30:00'),
+-- 审批通过，采购中
+(2, 'APP-20250225001', 4, 4, '机械键盘', 'Cherry MX Board 3.0', 10, 3500.00, '计算机实验室外设更新', 'PROCUREMENT', 1, '2025-02-26 14:00:00', '同意采购', 0, '2025-02-25 10:00:00', '2025-02-26 14:00:00'),
+-- 已入库（待领取）
+(3, 'APP-20250210001', 3, 4, '降噪耳机', 'Sony WH-1000XM5', 5, 12500.00, '语音室建设需要', 'WAREHOUSED', 1, '2025-02-12 11:00:00', '通过', 0, '2025-02-10 09:00:00', '2025-02-15 16:00:00'),
+-- 已完成（领取完毕）
+(4, 'APP-20250115001', 4, 4, '便携显示器', '15.6寸 4K IPS', 3, 6000.00, '移动办公需求', 'COMPLETED', 1, '2025-01-17 09:00:00', '同意', 0, '2025-01-15 14:00:00', '2025-01-20 10:00:00'),
+-- 已驳回
+(5, 'APP-20250308001', 3, 4, '台式主机', 'i9-14900K / RTX4090', 2, 50000.00, '科研需求', 'REJECTED', 1, '2025-03-09 15:00:00', '预算超标，建议分批采购', 0, '2025-03-08 11:00:00', '2025-03-09 15:00:00');
+
+-- ----------------------------
+-- 6. 采购单（对应采购中的申请）
+-- ----------------------------
+INSERT INTO purchase_order (id, order_no, application_id, external_partner, contact_info, total_amount, status, expected_date, actual_date, remark, deleted, create_time, update_time) VALUES
+(1, 'PO-20250226001', 2, '京东慧采', '400-606-9966', 3200.00, 'ORDERED', '2025-03-05', NULL, '已下单，等待发货', 0, '2025-02-26 15:00:00', '2025-02-27 10:00:00');
+
+-- ----------------------------
+-- 7. 入库单（对应已入库的申请）
+-- ----------------------------
+INSERT INTO warehouse_entry (id, entry_no, purchase_order_id, application_id, asset_name, specification, quantity, unit_price, total_amount, entry_date, status, approver_id, approve_time, approve_remark, remark, deleted, create_time, update_time) VALUES
+(1, 'WE-20250215001', NULL, 3, '降噪耳机', 'Sony WH-1000XM5', 5, 2300.00, 11500.00, '2025-02-15', 'APPROVED', 2, '2025-02-15 16:00:00', '验收合格', '已质检，品质正常', 0, '2025-02-15 14:00:00', '2025-02-15 16:00:00');
+
+-- ----------------------------
+-- 8. 审批记录
+-- ----------------------------
+INSERT INTO audit_record (id, biz_type, biz_id, auditor_id, action, remark, create_time) VALUES
+(1, 'APPLICATION', 2, 1, 'APPROVE', '同意采购', '2025-02-26 14:00:00'),
+(2, 'APPLICATION', 3, 1, 'APPROVE', '通过', '2025-02-12 11:00:00'),
+(3, 'APPLICATION', 5, 1, 'REJECT', '预算超标，建议分批采购', '2025-03-09 15:00:00'),
+(4, 'BORROW', 1, 2, 'APPROVE', '同意借用', '2025-03-01 10:00:00'),
+(5, 'BORROW', 2, 2, 'APPROVE', '请爱护设备', '2025-03-05 15:00:00'),
+(6, 'ALLOCATE', 1, 1, 'APPROVE', '同意调拨', '2025-03-05 11:00:00'),
+(7, 'WAREHOUSE_ENTRY', 1, 2, 'APPROVE', '验收合格', '2025-02-15 16:00:00');
+
+-- ----------------------------
+-- 9. 通知数据（模拟入库通知）
+-- ----------------------------
+INSERT INTO sys_notification (id, user_id, type, title, content, related_type, related_id, is_read, read_time, deleted, create_time) VALUES
+(1, 3, 'WAREHOUSE_ENTRY', '资产入库通知', '您申请的资产「降噪耳机」已入库完成，请联系管理员领取。', 'APPLICATION', 3, 0, NULL, 0, '2025-02-15 16:00:00'),
+(2, 3, 'AUDIT', '借用申请通过', '您申请的借用「笔记本电脑」已通过管理员审批。', 'BORROW', 1, 1, '2025-03-01 10:30:00', 0, '2025-03-01 10:00:00'),
+(3, 3, 'AUDIT', '借用申请通过', '您申请的借用「投影仪」已通过管理员审批。', 'BORROW', 2, 1, '2025-03-05 16:00:00', 0, '2025-03-05 15:00:00'),
+(4, 4, 'AUDIT', '借用待审批', '您提交「台式电脑」借用申请待审批。', 'BORROW', 3, 0, NULL, 0, '2025-03-10 08:35:00');
