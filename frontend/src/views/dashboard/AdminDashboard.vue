@@ -111,7 +111,7 @@ import { getStatusStats } from '@/api/asset'
 import { getPendingAudits, auditAction } from '@/api/audit'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
-import { Box, Tools, Bell, DocumentChecked, List, Setting, Odometer } from '@element-plus/icons-vue'
+import { Box, Tools, Bell, DocumentChecked, List, Setting, Odometer, ShoppingCart } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const statusStats = ref<any[]>([])
@@ -156,6 +156,7 @@ const statCards = computed(() => [
 const quickLinks = [
   { label: '资产列表', to: '/asset/list', icon: List, bg: '#eef2ff', color: '#6366f1' },
   { label: '新增资产', to: '/asset/list', icon: Box, bg: '#ecfdf5', color: '#10b981' },
+  { label: '资产申请', to: '/asset/application', icon: ShoppingCart, bg: '#fef9c3', color: '#eab308' },
   { label: '待办审批', to: '/audit/todo', icon: Bell, bg: '#fffbeb', color: '#f59e0b' },
   { label: '维修工单', to: '/ops/repair/manage', icon: Tools, bg: '#fef2f2', color: '#ef4444' },
   { label: '资产盘点', to: '/asset/check', icon: Odometer, bg: '#f0f9ff', color: '#0ea5e9' },

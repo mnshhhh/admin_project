@@ -46,7 +46,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getMyBorrows } from '@/api/audit'
-import { Camera, Tools, List, Bell } from '@element-plus/icons-vue'
+import { Camera, Tools, List, Bell, ShoppingCart } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -56,6 +56,7 @@ const actions = [
   { label: '扫码借用', desc: '扫描资产二维码发起借用', to: '/asset/list', icon: Camera, bg: '#eef2ff', color: '#6366f1' },
   { label: '报修申请', desc: '上报资产故障，拍照记录', to: '/ops/repair/apply', icon: Tools, bg: '#fffbeb', color: '#f59e0b' },
   { label: '资产查询', desc: '查看所有可借用资产', to: '/asset/list', icon: List, bg: '#ecfdf5', color: '#10b981' },
+  { label: '采购申请', desc: '提交资产采购需求', to: '/asset/application', icon: ShoppingCart, bg: '#fef9c3', color: '#eab308' },
   { label: '我的申请', desc: '查看审批进度与历史', to: '/audit/history', icon: Bell, bg: '#fef2f2', color: '#ef4444' },
 ]
 
