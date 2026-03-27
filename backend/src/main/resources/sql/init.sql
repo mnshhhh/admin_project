@@ -352,13 +352,13 @@ INSERT INTO sys_role (role_id, role_name, role_key, data_scope) VALUES
 (3, '普通师生', 'common', '4'),
 (4, '维修人员', 'repair_man', '4');
 
--- 用户（密码均为 Admin@123，BCrypt加密）
+-- 用户（密码均为 123456，BCrypt加密）
 INSERT INTO sys_user (user_id, dept_id, username, nickname, password, status) VALUES
-(1, 1, 'admin', '超级管理员', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0'),
-(2, 2, 'dept_mgr', '信息学院管理员', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0'),
-(3, 4, 'teacher01', '张老师', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0'),
-(4, 4, 'student01', '李同学', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0'),
-(5, 1, 'repair01', '维修师傅', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0');
+(1, 1, 'admin', '超级管理员', '$2a$10$v4/P5uaoS2hnRSJEV0xaf.wbJhW7wYF78NtWNy6QLO..B1HtcDq2i', '0'),
+(2, 2, 'dept_mgr', '信息学院管理员', '$2a$10$v4/P5uaoS2hnRSJEV0xaf.wbJhW7wYF78NtWNy6QLO..B1HtcDq2i', '0'),
+(3, 4, 'teacher01', '张老师', '$2a$10$v4/P5uaoS2hnRSJEV0xaf.wbJhW7wYF78NtWNy6QLO..B1HtcDq2i', '0'),
+(4, 4, 'student01', '李同学', '$2a$10$v4/P5uaoS2hnRSJEV0xaf.wbJhW7wYF78NtWNy6QLO..B1HtcDq2i', '0'),
+(5, 1, 'repair01', '维修师傅', '$2a$10$v4/P5uaoS2hnRSJEV0xaf.wbJhW7wYF78NtWNy6QLO..B1HtcDq2i', '0');
 
 -- 用户-角色关联
 INSERT INTO sys_user_role (user_id, role_id) VALUES (1,1),(2,2),(3,3),(4,3),(5,4);
