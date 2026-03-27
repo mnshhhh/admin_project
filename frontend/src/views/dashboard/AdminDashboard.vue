@@ -3,14 +3,14 @@
     <!-- 欢迎栏 -->
     <div class="welcome-bar">
       <div>
-        <h2 class="welcome-title">早上好，{{ userStore.nickname }} 👋</h2>
-        <p class="welcome-sub">这是今天的资产管理概览</p>
+        <h2 class="welcome-title">{{ greeting }}，{{ userStore.nickname }} 👋</h2>
+        <p class="welcome-sub">{{ isAdmin ? '这是今天的资产管理概览' : '快速完成借用、报修等日常操作' }}</p>
       </div>
       <div class="welcome-date">{{ dateStr }}</div>
     </div>
 
-    <!-- 数据卡片 -->
-    <div class="stat-grid">
+    <!-- 数据卡片 (仅管理员) -->
+    <div v-if="isAdmin" class="stat-grid">
       <div v-for="card in statCards" :key="card.label" class="stat-card">
         <div class="stat-icon" :style="{ background: card.bg }">
           <component :is="card.icon" :style="{ color: card.color }" />
@@ -27,8 +27,8 @@
       </div>
     </div>
 
-    <!-- 中部两列 -->
-    <div class="mid-grid">
+    <!-- 中部两列 (仅管理员) -->
+    <div v-if="isAdmin" class="mid-grid">
       <!-- 资产状态分布 -->
       <div class="panel">
         <div class="panel-header">
@@ -88,13 +88,41 @@
       </div>
     </div>
 
+    <!-- 我的借用记录 (非管理员) -->
+    <div v-if="!isAdmin" class="panel">
+      <div class="panel-header">
+        <h3>我的借用记录</h3>
+        <router-link to="/audit/history" class="panel-link">查看全部</router-link>
+      </div>
+      <el-table :data="myBorrows" class="borrow-table" v-if="myBorrows.length">
+        <el-table-column prop="assetName" label="资产名称" />
+        <el-table-column prop="borrowNo" label="申请单号" width="180">
+          <template #default="{ row }">
+            <span class="mono-text">{{ row.borrowNo }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="expectedReturnTime" label="归还时间" width="160" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <span :class="['status-badge', `bstatus-${row.status}`]">{{ statusLabel(row.status) }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div v-else class="empty-panel">暂无借用记录</div>
+    </div>
+
     <!-- 快捷操作 -->
     <div class="quick-panel">
       <div class="panel-header">
         <h3>快捷操作</h3>
       </div>
       <div class="quick-grid">
-        <router-link v-for="q in quickLinks" :key="q.label" :to="q.to" class="quick-item">
+        <router-link
+          v-for="q in filteredQuickLinks"
+          :key="q.label"
+          :to="q.to"
+          class="quick-item"
+        >
           <div class="quick-icon" :style="{ background: q.bg }">
             <component :is="q.icon" :style="{ color: q.color }" />
           </div>
@@ -106,16 +134,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { getStatusStats } from '@/api/asset'
-import { getPendingAudits, auditAction } from '@/api/audit'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Box, Tools, Bell, DocumentChecked, List, Setting, Odometer, ShoppingCart, Camera } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { Box, Tools, Bell, DocumentChecked, List, Setting, Odometer, ShoppingCart } from '@element-plus/icons-vue'
+import { getStatusStats } from '@/api/asset'
+import { getPendingAudits, auditAction, getMyBorrows } from '@/api/audit'
+import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const userStore = useUserStore()
 const statusStats = ref<any[]>([])
 const pendingAudits = ref<any[]>([])
+const myBorrows = ref<any[]>([])
+
+const isAdmin = computed(() => userStore.hasPermission('report:asset'))
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return '早上好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
 
 const dateStr = computed(() => {
   return new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
@@ -153,26 +193,40 @@ const statCards = computed(() => [
   },
 ])
 
-const quickLinks = [
-  { label: '资产列表', to: '/asset/list', icon: List, bg: '#eef2ff', color: '#6366f1' },
-  { label: '新增资产', to: '/asset/list', icon: Box, bg: '#ecfdf5', color: '#10b981' },
-  { label: '资产申请', to: '/asset/application', icon: ShoppingCart, bg: '#fef9c3', color: '#eab308' },
-  { label: '待办审批', to: '/audit/todo', icon: Bell, bg: '#fffbeb', color: '#f59e0b' },
-  { label: '维修工单', to: '/ops/repair/manage', icon: Tools, bg: '#fef2f2', color: '#ef4444' },
-  { label: '资产盘点', to: '/asset/check', icon: Odometer, bg: '#f0f9ff', color: '#0ea5e9' },
-  { label: '系统管理', to: '/system/user', icon: Setting, bg: '#faf5ff', color: '#a855f7' },
+const allQuickLinks = [
+  { label: '资产列表', to: '/asset/list', icon: List, bg: '#eef2ff', color: '#6366f1', perm: 'asset:list' },
+  { label: '新增资产', to: '/asset/list', icon: Box, bg: '#ecfdf5', color: '#10b981', perm: 'asset:add' },
+  { label: '扫码借用', to: '/asset/list', icon: Camera, bg: '#f0f9ff', color: '#0ea5e9', perm: 'asset:borrow' },
+  { label: '采购申请', to: '/asset/application', icon: ShoppingCart, bg: '#fef9c3', color: '#eab308', perm: 'asset:apply' },
+  { label: '待办审批', to: '/audit/todo', icon: Bell, bg: '#fffbeb', color: '#f59e0b', perm: 'audit:approve' },
+  { label: '维修工单', to: '/ops/repair/manage', icon: Tools, bg: '#fef2f2', color: '#ef4444', perm: 'repair:manage' },
+  { label: '资产盘点', to: '/asset/check', icon: Odometer, bg: '#f5f3ff', color: '#8b5cf6', perm: 'asset:check' },
+  { label: '系统管理', to: '/system/user', icon: Setting, bg: '#faf5ff', color: '#a855f7', perm: 'sys:user:list' },
 ]
 
-async function loadData() {
-  try {
-    const statsRes: any = await getStatusStats()
-    statusStats.value = statsRes.data || []
-  } catch {}
+const filteredQuickLinks = computed(() => allQuickLinks.filter(q => userStore.hasPermission(q.perm)))
 
-  if (userStore.hasPermission('audit:approve')) {
+function statusLabel(s: string) {
+  return { PENDING: '待审批', APPROVED: '已批准', REJECTED: '已驳回', BORROWED: '借用中', RETURNED: '已归还' }[s] || s
+}
+
+async function loadData() {
+  if (isAdmin.value) {
     try {
-      const auditRes: any = await getPendingAudits({ pageNum: 1, pageSize: 10 })
-      pendingAudits.value = auditRes.data?.rows || []
+      const statsRes: any = await getStatusStats()
+      statusStats.value = statsRes.data || []
+    } catch {}
+
+    if (userStore.hasPermission('audit:approve')) {
+      try {
+        const auditRes: any = await getPendingAudits({ pageNum: 1, pageSize: 10 })
+        pendingAudits.value = auditRes.data?.rows || []
+      } catch {}
+    }
+  } else {
+    try {
+      const res: any = await getMyBorrows({ pageNum: 1, pageSize: 5 })
+      myBorrows.value = res.data?.rows || []
     } catch {}
   }
 }
@@ -189,7 +243,6 @@ onMounted(loadData)
 <style scoped>
 .dashboard { display: flex; flex-direction: column; gap: 24px; }
 
-/* 欢迎栏 */
 .welcome-bar {
   display: flex;
   justify-content: space-between;
@@ -204,7 +257,6 @@ onMounted(loadData)
 .welcome-sub { font-size: 14px; opacity: 0.75; }
 .welcome-date { font-size: 13px; opacity: 0.6; white-space: nowrap; }
 
-/* 数据卡片 */
 .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 @media (min-width: 1024px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
 
@@ -237,11 +289,9 @@ onMounted(loadData)
 .stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: 500; }
 .stat-trend { position: absolute; right: 12px; bottom: 12px; opacity: 0.6; }
 
-/* 中部两列 */
 .mid-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 1024px) { .mid-grid { grid-template-columns: 1fr 1fr; } }
 
-/* Panel 通用 */
 .panel {
   background: white;
   border-radius: 14px;
@@ -266,8 +316,9 @@ onMounted(loadData)
   font-weight: 500;
 }
 .panel-badge.urgent { background: #fef2f2; color: #ef4444; }
+.panel-link { font-size: 13px; color: #6366f1; text-decoration: none; }
+.panel-link:hover { text-decoration: underline; }
 
-/* 状态图 */
 .status-chart { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
 .status-row { display: flex; align-items: center; gap: 12px; }
 .status-meta { display: flex; align-items: center; gap: 7px; width: 80px; flex-shrink: 0; }
@@ -277,7 +328,6 @@ onMounted(loadData)
 .status-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
 .status-count { font-size: 13px; font-weight: 600; color: #374151; width: 28px; text-align: right; }
 
-/* 审批列表 */
 .audit-list { display: flex; flex-direction: column; }
 .audit-item {
   display: flex;
@@ -300,7 +350,7 @@ onMounted(loadData)
   flex-shrink: 0;
 }
 .audit-info { flex: 1; min-width: 0; }
-.audit-asset { font-size: 13px; font-weight: 600; color: #1e293b; truncate: true; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.audit-asset { font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .audit-no { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 .audit-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -329,7 +379,14 @@ onMounted(loadData)
   gap: 12px;
 }
 
-/* 快捷操作 */
+.borrow-table { width: 100%; }
+.mono-text { font-family: ui-monospace, monospace; font-size: 12px; color: #64748b; }
+.status-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.bstatus-PENDING { background: #fffbeb; color: #d97706; }
+.bstatus-BORROWED { background: #eef2ff; color: #4f46e5; }
+.bstatus-RETURNED { background: #f1f5f9; color: #64748b; }
+.bstatus-REJECTED { background: #fef2f2; color: #ef4444; }
+
 .quick-panel {
   background: white;
   border-radius: 14px;
@@ -343,7 +400,8 @@ onMounted(loadData)
   gap: 0;
   padding: 16px 20px;
 }
-@media (min-width: 640px) { .quick-grid { grid-template-columns: repeat(6, 1fr); } }
+@media (min-width: 640px) { .quick-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) { .quick-grid { grid-template-columns: repeat(6, 1fr); } }
 
 .quick-item {
   display: flex;
