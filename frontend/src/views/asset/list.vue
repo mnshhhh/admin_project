@@ -93,10 +93,20 @@
         <el-table-column label="操作" width="160" fixed="right" @click.stop>
           <template #default="{ row }">
             <div class="row-actions" @click.stop>
-              <button class="action-btn" @click.stop="viewDetail(row.id)" title="查看详情">
+              <button class="action-btn blue" @click.stop="viewDetail(row.id)" title="查看详情">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 3C4 3 1.5 7 1.5 7S4 11 7 11s5.5-4 5.5-4S10 3 7 3z" stroke="currentColor" stroke-width="1.3"/>
                   <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+              <button class="action-btn purple" @click.stop="showQr(row)" title="显示二维码">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <rect x="1.5" y="1.5" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+                  <rect x="8.5" y="1.5" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+                  <rect x="1.5" y="8.5" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+                  <rect x="8.5" y="8.5" width="2" height="2" fill="currentColor"/>
+                  <rect x="11" y="8.5" width="1.5" height="1.5" fill="currentColor"/>
+                  <rect x="8.5" y="11" width="1.5" height="1.5" fill="currentColor"/>
                 </svg>
               </button>
               <button v-permission="['asset:edit']" class="action-btn blue" @click.stop="openForm(row)" title="编辑">
@@ -212,6 +222,18 @@
       <QrScanner v-if="showScanner" @scan="onScan" />
     </el-dialog>
 
+    <!-- 资产二维码弹窗 -->
+    <el-dialog v-model="qrVisible" :title="qrRow?.assetCode + ' 二维码'" width="340px" align-center>
+      <div v-if="qrRow" class="qr-dialog-body">
+        <img :src="`/qr/${qrRow.assetCode}.png`" :alt="qrRow.assetName" class="qr-image" />
+        <div class="qr-info">
+          <div class="qi-name">{{ qrRow.assetName }}</div>
+          <div class="qi-code">{{ qrRow.assetCode }}</div>
+          <span :class="['qi-status', `s-${qrRow.status}`]">{{ statusLabel(qrRow.status) }}</span>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- 借用弹窗 -->
     <el-dialog v-model="borrowVisible" title="发起借用申请" width="460px" align-center>
       <div class="borrow-asset-info">
@@ -255,6 +277,8 @@ const list = ref<any[]>([])
 const total = ref(0)
 const formVisible = ref(false)
 const showScanner = ref(false)
+const qrVisible = ref(false)
+const qrRow = ref<any>(null)
 const borrowVisible = ref(false)
 const borrowTarget = ref<any>(null)
 const flatDepts = ref<any[]>([])
@@ -274,6 +298,11 @@ const statusOptions = [
 const formRules = {
   assetName: [{ required: true, message: '资产名称不能为空' }],
   deptId: [{ required: true, message: '请选择归属部门' }]
+}
+
+function showQr(row: any) {
+  qrRow.value = row
+  qrVisible.value = true
 }
 
 function statusLabel(s: string) {
@@ -468,6 +497,18 @@ onMounted(async () => {
 }
 .action-btn:hover { background: #e2e8f0; color: #374151; }
 .action-btn.blue:hover { background: #eef2ff; color: #4f46e5; }
+.action-btn.purple:hover { background: #f5f3ff; color: #a855f7; }
+
+.qr-dialog-body { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 8px 0; }
+.qr-image { width: 280px; height: 340px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+.qr-info { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.qi-name { font-size: 16px; font-weight: 700; color: #1e293b; }
+.qi-code { font-size: 12px; color: #94a3b8; font-family: ui-monospace, monospace; }
+.qi-status { display: inline-flex; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.qi-status.s-IDLE { background: #ecfdf5; color: #059669; }
+.qi-status.s-IN_USE { background: #eef2ff; color: #4f46e5; }
+.qi-status.s-REPAIR { background: #fffbeb; color: #d97706; }
+.qi-status.s-SCRAPPED { background: #f1f5f9; color: #64748b; }
 .action-btn.red:hover { background: #fef2f2; color: #ef4444; }
 
 /* 卡片视图 */
