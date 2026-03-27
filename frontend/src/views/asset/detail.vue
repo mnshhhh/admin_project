@@ -70,8 +70,8 @@
         <div class="qr-panel">
           <div class="qr-title">资产二维码</div>
           <div class="qr-wrap">
-            <img v-if="asset.qrCodeUrl" :src="asset.qrCodeUrl" class="qr-img" alt="二维码" />
-            <div v-else class="qr-empty">
+            <img :src="`/qr/${asset.assetCode}.png`" class="qr-img" alt="二维码" @error="handleQrError" />
+            <div v-if="qrError" class="qr-empty">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                 <rect x="4" y="4" width="18" height="18" rx="3" stroke="#d1d5db" stroke-width="2"/>
                 <rect x="10" y="10" width="6" height="6" fill="#d1d5db" rx="1"/>
@@ -84,9 +84,7 @@
             </div>
           </div>
           <p class="qr-code mono-text">{{ asset.assetCode }}</p>
-          <el-button v-if="asset.qrCodeUrl" size="small" class="download-btn" @click="downloadQr">
-            下载二维码
-          </el-button>
+          <el-button size="small" class="download-btn" @click="downloadQr">下载二维码</el-button>
         </div>
 
         <!-- 备注 -->
@@ -141,6 +139,7 @@ const loading = ref(false)
 const asset = ref<any>(null)
 const showBorrow = ref(false)
 const showRepair = ref(false)
+const qrError = ref(false)
 const borrowForm = reactive({ purpose: '', expectedReturnTime: '' })
 const repairForm = reactive({ description: '' })
 
@@ -175,7 +174,7 @@ async function submitRepair() {
 }
 function downloadQr() {
   const link = document.createElement('a')
-  link.href = asset.value.qrCodeUrl
+  link.href = `/qr/${asset.value.assetCode}.png`
   link.download = `${asset.value.assetCode}.png`
   link.click()
 }

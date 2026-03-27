@@ -34,7 +34,7 @@ public class SysUserService {
             if (existing != null) throw new ServiceException("用户名已存在");
             SysUser user = new SysUser();
             copyDtoToUser(dto, user);
-            user.setPassword(passwordEncoder.encode(dto.getPassword() != null ? dto.getPassword() : "Admin@123"));
+            user.setPassword(passwordEncoder.encode(dto.getPassword() != null ? dto.getPassword() : "123456"));
             userMapper.insert(user);
             if (!CollectionUtils.isEmpty(dto.getRoleIds())) {
                 roleMapper.insertUserRoles(user.getUserId(), dto.getRoleIds());
