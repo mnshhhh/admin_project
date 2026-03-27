@@ -46,9 +46,14 @@
             <span class="text-secondary">{{ row.reason || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="130">
           <template #default="{ row }">
-            <span :class="['status-pill', `s-${row.status}`]">{{ statusLabel(row.status) }}</span>
+            <div class="status-cell">
+              <span :class="['status-pill', `s-${row.status}`]">{{ statusLabel(row.status) }}</span>
+              <div class="stepper">
+                <div v-for="i in 4" :key="i" :class="['step', statusStep(row.status) >= i && 'done', statusStep(row.status) === i && 'active']" />
+              </div>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="申请时间" width="160">
@@ -108,6 +113,7 @@ const tabs = [
   { label: '待审批', value: 'PENDING' },
   { label: '已批准', value: 'APPROVED' },
   { label: '采购中', value: 'PROCUREMENT' },
+  { label: '已入库', value: 'WAREHOUSED' },
   { label: '已完成', value: 'COMPLETED' },
   { label: '已驳回', value: 'REJECTED' },
 ]
@@ -126,7 +132,12 @@ const rules = {
 }
 
 function statusLabel(s: string) {
-  return { PENDING: '待审批', APPROVED: '已批准', REJECTED: '已驳回', PROCUREMENT: '采购中', COMPLETED: '已完成' }[s] || s
+  return { PENDING: '待审批', APPROVED: '已批准', REJECTED: '已驳回', PROCUREMENT: '采购中', WAREHOUSED: '已入库', COMPLETED: '已完成' }[s] || s
+}
+
+function statusStep(s: string) {
+  const map: Record<string, number> = { PENDING: 0, APPROVED: 1, PROCUREMENT: 2, WAREHOUSED: 3, COMPLETED: 4, REJECTED: -1 }
+  return map[s] ?? -1
 }
 
 function switchTab(val: string) {
@@ -200,5 +211,11 @@ onMounted(loadList)
 .s-APPROVED { background: #ecfdf5; color: #059669; }
 .s-REJECTED { background: #fef2f2; color: #dc2626; }
 .s-PROCUREMENT { background: #eef2ff; color: #4f46e5; }
+.s-WAREHOUSED { background: #f0fdf4; color: #16a34a; }
 .s-COMPLETED { background: #f1f5f9; color: #64748b; }
+.status-cell { display: flex; flex-direction: column; gap: 4px; }
+.stepper { display: flex; gap: 3px; align-items: center; }
+.step { width: 18px; height: 3px; border-radius: 2px; background: #e2e8f0; }
+.step.done { background: #6366f1; }
+.step.active { background: #a5b4fc; }
 </style>

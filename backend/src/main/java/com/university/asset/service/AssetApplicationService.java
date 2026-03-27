@@ -22,6 +22,8 @@ import com.university.asset.security.service.PermissionService;
 import com.university.asset.vo.AssetApplicationVO;
 import com.university.asset.vo.PurchaseOrderVO;
 import com.university.asset.vo.WarehouseEntryVO;
+import com.university.asset.entity.SysNotification;
+import com.university.asset.mapper.SysNotificationMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class AssetApplicationService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final WarehouseEntryMapper warehouseEntryMapper;
     private final AuditRecordMapper auditRecordMapper;
+    private final SysNotificationMapper notificationMapper;
 
     @Log("提交资产申请")
     @Transactional
@@ -211,8 +214,19 @@ public class AssetApplicationService {
 
             AssetApplication application = applicationMapper.selectById(entry.getApplicationId());
             if (application != null) {
-                application.setStatus("COMPLETED");
+                application.setStatus("WAREHOUSED");
                 applicationMapper.updateById(application);
+
+                SysNotification notification = new SysNotification();
+                notification.setUserId(application.getApplicantId());
+                notification.setType("WAREHOUSE_ENTRY");
+                notification.setTitle("资产入库通知");
+                notification.setContent("您申请的资产「" + application.getAssetName() + "」已入库完成，请联系管理员领取。");
+                notification.setRelatedType("APPLICATION");
+                notification.setRelatedId(application.getId());
+                notification.setIsRead(0);
+                notification.setCreateTime(LocalDateTime.now());
+                notificationMapper.insert(notification);
             }
         }
     }

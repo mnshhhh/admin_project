@@ -36,11 +36,30 @@
         </div>
 
         <div class="topbar-right">
-          <button class="topbar-btn" title="通知">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 2a5 5 0 00-5 5v3l-1.5 2.5h13L14 10V7a5 5 0 00-5-5zM7.5 14.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </button>
+          <el-popover placement="bottom-end" :width="360" trigger="click">
+            <template #reference>
+              <button class="topbar-btn" title="通知">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M9 2a5 5 0 00-5 5v3l-1.5 2.5h13L14 10V7a5 5 0 00-5-5zM7.5 14.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+              </button>
+            </template>
+            <div class="notif-panel">
+              <div class="notif-header">
+                <span class="notif-title">通知中心</span>
+                <el-button link type="primary" size="small" @click="markAllRead" v-if="unreadCount > 0">全部已读</el-button>
+              </div>
+              <div class="notif-list" v-if="notifList.length > 0">
+                <div v-for="item in notifList" :key="item.id" :class="['notif-item', !item.isRead && 'unread']" @click="handleNotifClick(item)">
+                  <div class="notif-item-title">{{ item.title }}</div>
+                  <div class="notif-item-content">{{ item.content }}</div>
+                  <div class="notif-item-time">{{ item.createTime }}</div>
+                </div>
+              </div>
+              <el-empty v-else description="暂无通知" :image-size="60" />
+            </div>
+          </el-popover>
 
           <el-dropdown @command="handleCommand" trigger="click">
             <div class="user-trigger">
@@ -80,11 +99,48 @@ import { useUserStore } from '@/store/user'
 import { ElMessageBox } from 'element-plus'
 import SidebarMenu from './SidebarMenu.vue'
 import { constantRoutes } from '@/router'
+import { getUnreadCount, getNotificationList, markAsRead, markAllAsRead } from '@/api/notification'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const drawerVisible = ref(false)
+const unreadCount = ref(0)
+const notifList = ref<any[]>([])
+
+async function loadUnread() {
+  try {
+    const res: any = await getUnreadCount()
+    unreadCount.value = res.data || 0
+  } catch {}
+}
+
+async function loadNotifList() {
+  try {
+    const res: any = await getNotificationList({ pageNum: 1, pageSize: 10 })
+    notifList.value = res.data?.rows || []
+  } catch {}
+}
+
+async function handleNotifClick(item: any) {
+  if (!item.isRead) {
+    await markAsRead(item.id)
+    item.isRead = 1
+    unreadCount.value = Math.max(0, unreadCount.value - 1)
+  }
+  if (item.relatedType === 'APPLICATION') {
+    router.push(`/asset/application`)
+  }
+}
+
+async function markAllRead() {
+  await markAllAsRead()
+  unreadCount.value = 0
+  notifList.value.forEach(i => i.isRead = 1)
+}
+
+loadUnread()
+setInterval(loadUnread, 30000)
 
 const currentTitle = computed(() => route.meta?.title as string || '工作台')
 const parentTitle = computed(() => {
@@ -240,4 +296,32 @@ async function handleCommand(command: string) {
 .fade-up-leave-active { transition: all 0.15s ease; }
 .fade-up-enter-from { opacity: 0; transform: translateY(8px); }
 .fade-up-leave-to { opacity: 0; transform: translateY(-4px); }
+
+/* 通知 */
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.notif-panel { padding: 0; }
+.notif-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 12px; border-bottom: 1px solid #f0f1f6; }
+.notif-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+.notif-list { max-height: 360px; overflow-y: auto; }
+.notif-item { padding: 12px 0; border-bottom: 1px solid #f8f9fc; cursor: pointer; transition: background 0.15s; }
+.notif-item:hover { background: #f8f9fc; margin: 0 -12px; padding: 12px; }
+.notif-item.unread .notif-item-title { color: #0f172a; }
+.notif-item-title { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+.notif-item-content { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.notif-item-time { font-size: 11px; color: #cbd5e1; margin-top: 4px; }
 </style>

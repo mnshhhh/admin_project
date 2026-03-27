@@ -409,7 +409,8 @@ INSERT INTO sys_menu (menu_id, parent_id, menu_name, perms, menu_type, path, com
 (82, 4, '资产申请审批', 'asset:apply:approve', 'C', 'application', 'asset/application/approval', 'document-checked', 3),
 (83, 2, '采购管理', 'asset:po:manage', 'C', 'purchase', 'asset/application/purchase', 'shopping-cart', 14),
 (84, 2, '资产入库', 'asset:entry:manage', 'C', 'warehouse', 'asset/application/warehouse', 'box', 15),
-(85, 2, '入库审批', 'asset:entry:approve', 'F', NULL, NULL, NULL, 16);
+(85, 2, '入库审批', 'asset:entry:approve', 'F', NULL, NULL, NULL, 16),
+(86, 6, '通知中心', 'notification:list', 'C', 'notification', 'system/notification', 'message', 8);
 
 -- 角色-菜单关联（管理员拥有所有权限）
 INSERT INTO sys_role_menu (role_id, menu_id)
@@ -421,16 +422,16 @@ INSERT INTO sys_role_menu (role_id, menu_id) VALUES
 (2,3),(2,40),(2,41),
 (2,4),(2,50),(2,51),(2,82),
 (2,5),(2,60),
-(2,80),(2,81),(2,83),(2,84),(2,85);
+(2,80),(2,81),(2,83),(2,84),(2,85),(2,86);
 
 -- 普通师生权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
 (3,1),(3,10),(3,2),(3,20),(3,26),(3,27),(3,29),(3,3),(3,40),(3,4),(3,51),
-(3,80);
+(3,80),(3,86);
 
 -- 维修人员权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
-(4,1),(4,10),(4,3),(4,41),(4,4),(4,51);
+(4,1),(4,10),(4,3),(4,41),(4,4),(4,51),(4,86);
 
 -- 资产分类
 INSERT INTO asset_category (id, parent_id, name, code, order_num) VALUES
@@ -448,3 +449,22 @@ INSERT INTO sys_asset (asset_code, asset_name, category_id, brand, model, purcha
 ('AST-2024-000003', '台式电脑', 5, '戴尔', 'OptiPlex 5090', '2022-06-15', 5800.00, 4300.00, 5, 4, 3, '计算机系机房A', 'IDLE'),
 ('AST-2024-000004', '激光打印机', 6, '惠普', 'LaserJet Pro M404n', '2023-03-20', 2800.00, 2400.00, 5, 4, 3, '计算机系办公室', 'IDLE'),
 ('AST-2024-000005', '示波器', 3, '泰克', 'TBS1104', '2021-11-05', 12000.00, 8000.00, 10, 3, 2, '机械实验室', 'IN_USE');
+
+-- ----------------------------
+-- 通知表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS sys_notification (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '通知ID',
+    user_id      BIGINT       NOT NULL COMMENT '接收用户ID',
+    type         VARCHAR(50)  NOT NULL COMMENT '通知类型',
+    title        VARCHAR(200) NOT NULL COMMENT '通知标题',
+    content      VARCHAR(500)          DEFAULT NULL COMMENT '通知内容',
+    related_type VARCHAR(50)           DEFAULT NULL COMMENT '关联业务类型',
+    related_id   BIGINT               DEFAULT NULL COMMENT '关联业务ID',
+    is_read      TINYINT     NOT NULL DEFAULT 0 COMMENT '是否已读(0未读 1已读)',
+    read_time    DATETIME              DEFAULT NULL COMMENT '阅读时间',
+    deleted      TINYINT     NOT NULL DEFAULT 0,
+    create_time  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_read (is_read)
+) ENGINE = InnoDB COMMENT = '通知表';

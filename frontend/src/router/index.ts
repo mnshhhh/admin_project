@@ -142,6 +142,12 @@ export const constantRoutes: RouteRecordRaw[] = [
         name: 'SystemLog',
         component: () => import('@/views/system/log/index.vue'),
         meta: { title: '审计日志', perms: ['sys:log:view'] }
+      },
+      {
+        path: 'notification',
+        name: 'SystemNotification',
+        component: () => import('@/views/system/notification/index.vue'),
+        meta: { title: '通知中心', perms: ['notification:list'] }
       }
     ]
   },
