@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.WarehouseEntryMapper">
+
+    <select id="selectWarehouseEntryPage" resultType="com.university.asset.vo.WarehouseEntryVO">
+        SELECT we.*, po.order_no, a.apply_no, au.nickname AS approver_name
+        FROM warehouse_entry we
+        LEFT JOIN purchase_order po ON we.purchase_order_id = po.id
+        LEFT JOIN asset_application a ON we.application_id = a.id
+        LEFT JOIN sys_user au ON we.approver_id = au.user_id
+        WHERE we.deleted = 0
+        <if test="status != null and status != ''">
+            AND we.status = #{status}
+        </if>
+        ORDER BY we.create_time DESC
+    </select>
+
+    <select id="selectWarehouseEntryVOById" resultType="com.university.asset.vo.WarehouseEntryVO">
+        SELECT we.*, po.order_no, a.apply_no, au.nickname AS approver_name
+        FROM warehouse_entry we
+        LEFT JOIN purchase_order po ON we.purchase_order_id = po.id
+        LEFT JOIN asset_application a ON we.application_id = a.id
+        LEFT JOIN sys_user au ON we.approver_id = au.user_id
+        WHERE we.id = #{id} AND we.deleted = 0
+    </select>
+
+</mapper>

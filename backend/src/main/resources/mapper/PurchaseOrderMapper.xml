@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.PurchaseOrderMapper">
+
+    <select id="selectPurchaseOrderPage" resultType="com.university.asset.vo.PurchaseOrderVO">
+        SELECT po.*, a.apply_no, a.asset_name, u.nickname AS applicant_name
+        FROM purchase_order po
+        LEFT JOIN asset_application a ON po.application_id = a.id
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        WHERE po.deleted = 0
+        <if test="status != null and status != ''">
+            AND po.status = #{status}
+        </if>
+        ORDER BY po.create_time DESC
+    </select>
+
+    <select id="selectPurchaseOrderVOById" resultType="com.university.asset.vo.PurchaseOrderVO">
+        SELECT po.*, a.apply_no, a.asset_name, u.nickname AS applicant_name
+        FROM purchase_order po
+        LEFT JOIN asset_application a ON po.application_id = a.id
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        WHERE po.id = #{id} AND po.deleted = 0
+    </select>
+
+</mapper>

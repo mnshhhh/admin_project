@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.SysAssetMapper">
+
+    <select id="selectAssetPage" resultType="com.university.asset.vo.AssetVO">
+        SELECT a.*, d.dept_name, u.nickname AS manager_name, c.name AS category_name
+        FROM sys_asset a
+        LEFT JOIN sys_dept d ON a.dept_id = d.dept_id
+        LEFT JOIN sys_user u ON a.manager_id = u.user_id
+        LEFT JOIN asset_category c ON a.category_id = c.id
+        WHERE a.deleted = 0
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (a.asset_name LIKE CONCAT('%', #{query.keyword}, '%')
+                OR a.asset_code LIKE CONCAT('%', #{query.keyword}, '%')
+                OR a.brand LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.categoryId != null">
+            AND a.category_id = #{query.categoryId}
+        </if>
+        <if test="query.deptId != null">
+            AND a.dept_id = #{query.deptId}
+        </if>
+        <if test="query.status != null and query.status != ''">
+            AND a.status = #{query.status}
+        </if>
+        <if test="query.dataScope != null and query.dataScope != ''">
+            ${query.dataScope}
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="selectAssetVOById" resultType="com.university.asset.vo.AssetVO">
+        SELECT a.*, d.dept_name, u.nickname AS manager_name, c.name AS category_name
+        FROM sys_asset a
+        LEFT JOIN sys_dept d ON a.dept_id = d.dept_id
+        LEFT JOIN sys_user u ON a.manager_id = u.user_id
+        LEFT JOIN asset_category c ON a.category_id = c.id
+        WHERE a.id = #{id} AND a.deleted = 0
+    </select>
+
+    <select id="selectStatusStatistics" resultType="map">
+        SELECT status, COUNT(*) AS count FROM sys_asset WHERE deleted = 0 GROUP BY status
+    </select>
+
+    <select id="selectCategoryStatistics" resultType="map">
+        SELECT c.name AS category, COUNT(*) AS count
+        FROM sys_asset a
+        LEFT JOIN asset_category c ON a.category_id = c.id
+        WHERE a.deleted = 0
+        GROUP BY a.category_id, c.name
+    </select>
+
+</mapper>

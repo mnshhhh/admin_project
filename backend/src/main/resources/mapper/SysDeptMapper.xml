@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.SysDeptMapper">
+
+    <select id="selectDeptList" resultType="com.university.asset.entity.SysDept">
+        SELECT * FROM sys_dept WHERE deleted = 0
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY parent_id, order_num
+    </select>
+
+    <select id="selectChildrenById" resultType="com.university.asset.entity.SysDept">
+        SELECT * FROM sys_dept
+        WHERE deleted = 0 AND (dept_id = #{deptId} OR FIND_IN_SET(#{deptId}, ancestors))
+    </select>
+
+</mapper>

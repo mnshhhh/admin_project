@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.AssetApplicationMapper">
+
+    <select id="selectApplicationPage" resultType="com.university.asset.vo.AssetApplicationVO">
+        SELECT a.*, u.nickname AS applicant_name, d.dept_name AS dept_name,
+               au.nickname AS approver_name
+        FROM asset_application a
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        LEFT JOIN sys_dept d ON a.dept_id = d.dept_id
+        LEFT JOIN sys_user au ON a.approver_id = au.user_id
+        WHERE a.deleted = 0
+        <if test="applicantId != null">
+            AND a.applicant_id = #{applicantId}
+        </if>
+        <if test="status != null and status != ''">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="selectPendingForAuditor" resultType="com.university.asset.vo.AssetApplicationVO">
+        SELECT a.*, u.nickname AS applicant_name, d.dept_name AS dept_name
+        FROM asset_application a
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        LEFT JOIN sys_dept d ON a.dept_id = d.dept_id
+        WHERE a.deleted = 0 AND a.status = 'PENDING'
+        AND a.dept_id IN (
+            SELECT dept_id FROM sys_dept
+            WHERE FIND_IN_SET(#{auditorDeptId}, ancestors) OR dept_id = #{auditorDeptId}
+        )
+        ORDER BY a.create_time ASC
+    </select>
+
+    <select id="selectApplicationVOById" resultType="com.university.asset.vo.AssetApplicationVO">
+        SELECT a.*, u.nickname AS applicant_name, d.dept_name AS dept_name,
+               au.nickname AS approver_name
+        FROM asset_application a
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        LEFT JOIN sys_dept d ON a.dept_id = d.dept_id
+        LEFT JOIN sys_user au ON a.approver_id = au.user_id
+        WHERE a.id = #{id} AND a.deleted = 0
+    </select>
+
+</mapper>

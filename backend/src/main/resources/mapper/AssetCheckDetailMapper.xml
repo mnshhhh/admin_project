@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.AssetCheckDetailMapper">
+
+    <select id="selectByTaskId" resultType="com.university.asset.entity.AssetCheckDetail">
+        SELECT * FROM asset_check_detail WHERE task_id = #{taskId}
+    </select>
+
+</mapper>

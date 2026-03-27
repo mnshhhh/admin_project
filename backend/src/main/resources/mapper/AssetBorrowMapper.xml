@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.university.asset.mapper.AssetBorrowMapper">
+
+    <select id="selectBorrowPage" resultType="com.university.asset.entity.AssetBorrow">
+        SELECT * FROM asset_borrow WHERE deleted = 0
+        <if test="applicantId != null">
+            AND applicant_id = #{applicantId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectPendingForAuditor" resultType="com.university.asset.entity.AssetBorrow">
+        SELECT b.* FROM asset_borrow b
+        LEFT JOIN sys_user u ON b.applicant_id = u.user_id
+        WHERE b.deleted = 0 AND b.status = 'PENDING'
+        AND u.dept_id IN (
+            SELECT dept_id FROM sys_dept
+            WHERE FIND_IN_SET(#{auditorDeptId}, ancestors) OR dept_id = #{auditorDeptId}
+        )
+        ORDER BY b.create_time ASC
+    </select>
+
+</mapper>
