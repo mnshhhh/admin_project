@@ -126,14 +126,15 @@ const features = [
 
 const accounts = [
   { label: '超级管理员', username: 'admin', color: '#6366f1' },
-  { label: '部门管理员', username: 'dept_mgr', color: '#10b981' },
-  { label: '普通师生', username: 'teacher01', color: '#f59e0b' },
-  { label: '维修人员', username: 'repair01', color: '#ef4444' },
+  { label: '资产管理员', username: 'dept_mgr', color: '#10b981' },
+  { label: '张老师', username: 'teacher01', color: '#f59e0b' },
+  { label: '李同学', username: 'student01', color: '#3b82f6' },
+  { label: '维修师傅', username: 'repair01', color: '#ef4444' },
 ]
 
 function fillAccount(a: { username: string }) {
   form.username = a.username
-  form.password = 'Admin@123'
+  form.password = '123456'
 }
 
 async function handleLogin() {
